@@ -29,6 +29,10 @@
   transition: all 0.2s ease-in-out;
 }
 
+body {
+  background-color: #ADD8E6; /* Light blue color */
+}
+
 .submit-button:hover {
   background-color: #0066cc;
 }
