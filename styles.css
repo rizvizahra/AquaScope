@@ -30,7 +30,9 @@
 }
 
 body {
-  background-color: #ADD8E6; /* Light blue color */
+  background-image: url("aquatic-background.jpg");
+  background-repeat: no-repeat;
+  background-size: cover;
 }
 
 .submit-button:hover {
