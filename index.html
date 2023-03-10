@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+	<meta name="viewport" content="initial-scale=1.0, user-scalable=no" />
+	<meta charset="utf-8">
+	<title>Water Quality</title>		
+	<link rel="stylesheet" type="text/css" href="styles.css">
+</head>
+<body>
+
+<h1>AquaScope</h1>		
+<div class="input-container">
+  <input type="text" id="address" placeholder="Enter an address" class="input-field">
+  <button onclick="showAddress()" class="submit-button">Submit</button>
+</div>
+
+	<div id="map"></div>
+	<script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDlCYsieG1YgNgTU6FNM3pcs4V8Toj3EIA&callback=initMap&libraries=places" async defer></script>
+		
+	<script>
+		var map;
+		var marker;
+		var tsm;
+		var geocoder;
+		var formatted_address;
+		var city;
+		var population;
+		var tsmColor;
+		var elevation;
+		var plot;
+	
+		
+		function initMap() {
+			map = new google.maps.Map(document.getElementById('map'), {
+				center: { lat: 36.8853217, lng: -76.3058786 },
+				 mapTypeId: 'satellite',
+				labels: false,
+				zoom: 9
+			});
+	
+
+// Define the coordinates for the Hampton Roads area
+var hamptonRoadsBounds = {
+  north: 37.19,
+  south: 36.55,
+  east: -75.86,
+  west: -76.62
+};
+
+// Create a red rectangle for Hampton Roads
+var hamptonRoadsRectangle = new google.maps.Rectangle({
+  strokeColor: "#FF0000",
+  strokeOpacity: 0.8,
+  strokeWeight: 2,
+  fillColor: "#FF0000",
+  fillOpacity: 0,
+  bounds: hamptonRoadsBounds,
+  clickable: false // set clickable property to false
+});
+
+// Add the Hampton Roads rectangle to the map
+hamptonRoadsRectangle.setMap(map);
+
+
+
+
+
+
+
+
+
+
+			
+			map.addListener('click', function (e) {
+				if (marker) {
+					marker.setMap(null);
+				}
+				
+				
+				
+                // Use the geocoder to get the address
+                geocoder.geocode({ 'location': e.latLng }, function(results, status) {
+                    if (status == 'OK') {
+                        if (results[0]) {
+                            // Display the address in an alert box
+                            formatted_address = results[0].formatted_address;
+							
+							
+							city = null;
+							for (var i = 0; i < results[0].address_components.length; i++) {
+								var component = results[0].address_components[i];
+								if (component.types.includes('locality')) {
+									city = component.long_name;
+									break;
+								}
+							}	
+							
+							
+                        } else {
+                            //alert('No results found');
+                        }
+                    } else {
+                        //alert('Geocoder failed due to: ' + status);
+                    }
+                });					
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				
+				marker = new google.maps.Marker({
+					position: e.latLng,
+                map: map,
+				title: formatted_address
+				});
+				
+				
+				//
+				var clickedPoint = e.latLng;
+                updateGasStationCount(clickedPoint);
+
+
+
+            // Function to update the gas station count
+            function updateGasStationCount(point) {
+                var service = new google.maps.places.PlacesService(map);
+				
+				var isLand = 0;
+				
+			
+				
+				var elevator = new google.maps.ElevationService();
+                var locations = [point];
+
+                elevator.getElevationForLocations({
+                    'locations': locations
+                }, function(results, status) {
+                    if (status === 'OK') {
+						elevation = results[0].elevation.toFixed(2) + " meters";
+                        if (results[0].elevation < 0) {
+                            isLand = 0;
+                        } else {
+                            isLand = 1;
+                        }
+                    } else {
+						elevation = 'Unknown';
+                        isLand = 0;
+                    }
+                });
+			
+                service.nearbySearch({
+                    location: point,
+                    radius: 3218.68, // 2 miles in meters
+                    type: ['gas_station']
+                }, function(results, status) {
+                    if (status === google.maps.places.PlacesServiceStatus.OK) {
+                        var count = results.length;
+						tsm = 7.75*count+5;						
+                    } else {
+                        //error
+                    }
+                });
+            }
+
+
+				google.maps.event.addListener(marker, 'click', function () {
+					showLatLong(e.latLng);
+				});
+			});
+			
+			geocoder = new google.maps.Geocoder();
+		}
+
+		function showAddress() {
+			var address = document.getElementById('address').value;
+			var geocoder = new google.maps.Geocoder();
+
+			geocoder.geocode({ 'address': address }, function (results, status) {
+			
+			
+
+			
+			
+			
+			
+			
+			
+			
+				if (status === 'OK') {
+					var location = results[0].geometry.location;
+					formatted_address = results[0].formatted_address;
+					
+					
+					city = null;
+					for (var i = 0; i < results[0].address_components.length; i++) {
+						var component = results[0].address_components[i];
+						if (component.types.includes('locality')) {
+							city = component.long_name;
+							break;
+						}
+					}	
+								
+					
+					
+					
+					
+					
+					
+					if (marker) {
+						marker.setMap(null);
+					}
+					marker = new google.maps.Marker({
+						position: location,
+						map: map
+					});
+
+					google.maps.event.addListener(marker, 'click', function () {
+						showLatLong(location);
+					});
+
+					map.setCenter(location);
+				} else {
+					alert('Geocode was not successful for the following reason: ' + status);
+				}
+			});
+		}
+		
+		
+		
+		
+
+		function showLatLong(latLng) {		
+		
+			var lat = latLng.lat().toFixed(3);
+			var lng = latLng.lng().toFixed(3);
+			
+						
+			 plot = "tsm_graph-0.png";						
+			if(city == "Chesapeake"){
+			  population = '247,011';
+			  plot = "tsm_graph-1.png";
+			  } 
+			else if(city == "Hampton"){
+			  population = '135,410';
+			  plot = "tsm_graph-2.png";
+			  } 			  
+			else if(city == "Newport News") 
+			  population = '179,225';
+			else if(city == "Norfolk")
+			  population = '245,782';
+			else if(city == "Portsmouth")
+			  population = '94,584';
+			else if(city == "Suffolk")
+			  population = '94,966';
+			else if(city == "Virginia Beach") 
+			  population = '449,974';
+			else if(city == "Yorktown") 
+			  population = '195,200';
+			else if(city == "Williamsburg") 
+			  population = '15,052';
+			else if(city == "Poquoson")
+			  population = '12,270';
+			else if(city == "Smithfield")
+			  population = '8,369';
+			else if(city == "Isle of Wight County")
+			  population = '38,500';
+			else if(city == "Gloucester Point")
+			  population = '37,143';
+			else if(city == "James City County")
+			  population = '76,000';
+			else if(city == "Mathews County")
+			  population = '8,779';
+			else if(city == "Surry County")
+			  population = '6,610';
+			else if(city == "West Point")
+			  population = '3,306';
+			else if(city == "Franklin")
+			  population = '8,105';
+			else if(city == "Emporia")
+			  population = '5,346';
+			else
+			  population = 'Not Found';
+		
+				
+			if(tsm> 120)
+				tsmColor="red";
+			else if (tsm>80)
+				tsmColor='orange';
+			else
+				tsmColor='blue';
+			
+			
+			
+				
+			var contentString = '<div id="content">' +
+				'<div id="siteNotice">' +
+				'</div>' +
+				'<h3 id="firstHeading" class="firstHeading">Dive into the data for this location:</h3>' +
+				'<div id="bodyContent">' +
+				'<p><b>Latitude, Longitude:</b> ' + lat + ',' + lng + '</p>' +
+				'<p><b>Address:</b> ' + formatted_address + '</p>' +
+				'<p><b>Elevation:</b> ' + elevation + '</p>' + 					
+				'<p style="color: '+tsmColor+';"><b>Total Suspended Matter (TSM):</b> ' + tsm + ' mg/L'+ '</p>' +    
+				'<p><b>'+ city + ' Population (2021):</b> ' + population + '</p>' +
+				'<table width=100%><tr><td><p><HR><b>TSM Legend:</b></p><p style="color:red;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;TSM>120: Red </p> <p style="color:orange;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;120>=TSM>80:Orange </p> <p style="color:blue;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;80>=TSM: Blue</p></td><td><img src="'+plot+'" width=150px></td></tr></table>' +				
+				'</div>' +
+				'</div>';
+
+
+			var infowindow = new google.maps.InfoWindow({
+				content: contentString
+			});
+
+			infowindow.setPosition(latLng);
+			infowindow.open(map);
+		}
+	</script>
+</body>
+</html>
